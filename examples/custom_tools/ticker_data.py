@@ -3,12 +3,14 @@
 #
 # This source code is licensed under the terms described in the LICENSE file in
 # the root directory of this source tree.
-
 from typing import Dict
 
 import yfinance as yf
-from llama_agentic_system.tools.custom import SingleMessageCustomTool
-from llama_models.llama3_1.api.datatypes import ToolParamDefinition
+from llama_stack_client.types.tool_param_definition_param import (
+    ToolParamDefinitionParam,
+)
+
+from .single_message import SingleMessageCustomTool
 
 
 class TickerDataTool(SingleMessageCustomTool):
@@ -20,26 +22,26 @@ class TickerDataTool(SingleMessageCustomTool):
     def get_description(self) -> str:
         return "Get yearly closing prices for a given ticker symbol"
 
-    def get_params_definition(self) -> Dict[str, ToolParamDefinition]:
+    def get_params_definition(self) -> Dict[str, ToolParamDefinitionParam]:
         return {
-            "ticker_symbol": ToolParamDefinition(
+            "ticker_symbol": ToolParamDefinitionParam(
                 param_type="str",
                 description="The ticker symbol for which to get the data. eg. '^GSPC'",
                 required=True,
             ),
-            "start": ToolParamDefinition(
+            "start": ToolParamDefinitionParam(
                 param_type="str",
                 description="Start date, eg. '2021-01-01'",
                 required=True,
             ),
-            "end": ToolParamDefinition(
+            "end": ToolParamDefinitionParam(
                 param_type="str",
                 description="End date, eg. '2024-12-31'",
                 required=True,
             ),
         }
 
-    async def run_impl(self, ticker_symbol: str, start: str, end: str):
+    def run_impl(self, ticker_symbol: str, start: str, end: str):
         data = yf.download(ticker_symbol, start=start, end=end)
 
         data["Year"] = data.index.year

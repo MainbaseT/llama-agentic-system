@@ -1,52 +1,186 @@
+# llama-stack-apps
 
-# Llama as a System
+[![Discord](https://img.shields.io/discord/1257833999603335178)](https://discord.gg/llama-stack)
 
-This repo allows you to run Llama 3.1 as a system capable of performing "agentic" tasks like:
+This repo shows examples of applications built on top of [Llama Stack](https://github.com/meta-llama/llama-stack). Starting Llama 3.1 you can build agentic applications capable of:
 
-- Breaking a task down and performing multi-step reasoning.
-- Ability to use tools
+- breaking a task down and performing multi-step reasoning.
+- using tools to perform some actions
   - built-in: the model has built-in knowledge of tools like search or code interpreter
   - zero-shot: the model can learn to call tools using previously unseen, in-context tool definitions
-
-Additionally, we would like to shift safety evaluation from the model level to the overall system level. This allows the underlying model to remain broadly steerable and adaptable to use cases which need varying levels of safety protection.
-
-One of the safety protections is provided by Llama Guard. By default, Llama Guard is used for both input and output filtering. However, the system can be configured to modify this default setting. For example, it is recommended to use Llama Guard for output filtering in situations where refusals to benign prompts are frequently observed, as long as safety requirements are met for your use case.
+- providing system level safety protections using models like Llama Guard.
 
 > [!NOTE]
-> The API is still evolving and may change. Feel free to build and experiment, but please don't rely on its stability just yet!
+> The Llama Stack API is still evolving and may change. Feel free to build and experiment, but please don't rely on its stability just yet!
 
 
-**LLama Agentic System Installation and Setup Guide**
-=============================================
+An agentic app requires a few components:
+- ability to run inference on the underlying Llama series of models
+- ability to run safety checks using the Llama Guard series of models
+- ability to execute tools, including a code execution environment, and loop using the model's multi-step reasoning process
 
-**Create a Conda Environment**
------------------------------
+All of these components are now offered by a single Llama Stack Distribution. The [Llama Stack](https://github.com/meta-llama/llama-stack) defines and standardizes these components and many others that are needed to make building Generative AI applications smoother. Various implementations of these APIs are then assembled together via a **Llama Stack Distribution**.
 
-Create a new conda environment with the required Python version:
+## Getting started with the Llama Stack Apps
+
+To get started with Llama Stack Apps, you'll need to:
+
+1. Install prerequisites
+3. Start a Llama Stack server
+4. Connect your client agentic app to Llama Stack server
+
+Once started, you can then just point your agentic app to the URL for this server (e.g. `http://localhost:5000`).
+
+### 1. Install Prerequisites
+
+**Python Packages**
+
+We recommend creating an isolated conda Python environment.
+
 ```bash
 # Create and activate a virtual environment
-ENV=agentic_env
-with-proxy conda create -n $ENV python=3.10
-cd <path-to-llama-agentic-system-repo>
+ENV=stack
+conda create -n $ENV python=3.10
+cd <path-to-llama-stack-apps-repo>
 conda activate $ENV
 
-# Install the package
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-Note that you can also install this simply as a python [package](https://pypi.org/project/llama-agentic-system/) by using `pip install llama-agentic-system`.
+This will install all dependencies required to (1) Build and start a Llama Stack server (2) Connect your client app to Llama Stack server.
 
-**Creation of simple virtual environments**
------------------------------
+
+### 2. Starting a Llama Stack Server
+- Please see our [llama-stack](https://github.com/meta-llama/llama-stack) repo's [Getting Started Guide](https://llama-stack.readthedocs.io/en/latest/getting_started/index.html) for setting up a Llama Stack distribution and running server to serve API endpoints. You should have a server endpoint for building your client apps.
+
+Once your your server started, you should have see outputs --
+```
+...
+Serving POST /agentic_system/session/delete
+Serving POST /agentic_system/session/get
+Serving POST /agentic_system/step/get
+Serving POST /agentic_system/turn/get
+Serving GET /telemetry/get_trace
+Serving POST /telemetry/log_event
+Listening on :::5000
+INFO:     Started server process [587053]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://[::]:5000 (Press CTRL+C to quit)
+```
+
+### 3. Test agents demo script
+
+We have built sample demo scripts for interacting with the Stack server.
+
+With the server running, you may run to test out an simple Agent
+
+This example will require the API key from Brave Search. You need to set it to the environment variable `BRAVE_SEARCH_API_KEY`
+
+Linux/Mac
+```
+export BRAVE_SEARCH_API_KEY=[KEY]
+```
+To run:
+```
+python -m examples.agents.hello localhost 5000
+```
+
+You will see outputs of the form --
+```
+> created agents with agent_id=d050201b-0ca1-4abd-8eee-3cba2b8c0fbc
+User> Hello
+shield_call> No Violation
+inference> How can I assist you today?
+shield_call> No Violation
+User> Which players played in the winning team of the NBA western conference semifinals of 2024, please use tools
+shield_call> No Violation
+inference> brave_search.call(query="NBA Western Conference Semifinals 2024 winning team players")
+tool_execution> Tool:brave_search Args:{'query': 'NBA Western Conference Semifinals 2024 winning team players'}
+tool_execution> Tool:brave_search Response:{"query": "NBA Western Conference Semifinals 2024 winning team players", "top_k": [{"title": "2024 NBA Western Conference Semifinals - Mavericks vs. Thunder | Basketball-Reference.com", "url": "https://www.basketball-reference.com/playoffs/2024-nba-western-conference-semifinals-mavericks-vs-thunder.html", "description": "Summary and statistics for the <strong>2024</strong> <strong>NBA</strong> <strong>Western</strong> <strong>Conference</strong> <strong>Semifinals</strong> - Mavericks vs. Thunder", "type": "search_result"}, {"title": "2024 NBA playoffs - Wikipedia", "url": "https://en.wikipedia.org/wiki/2024_NBA_playoffs", "description": "Aged 20 years and 96 days old, ... youngest <strong>player</strong> <strong>in</strong> <strong>NBA</strong> history to record 10+ points and 15+ rebounds in a playoff game, coming during game 6 of the Maverick&#x27;s <strong>Western</strong> <strong>Conference</strong> <strong>Semifinal</strong> <strong>win</strong> against the Thunder on May 18. The Timberwolves overcame a 20\u2013point deficit to <strong>win</strong> game 7 against the Nuggets, the largest game 7 comeback in <strong>NBA</strong> playoffs history. With the defending champion Nuggets losing to the Minnesota Timberwolves, the <strong>2024</strong> playoffs marked ...", "type": "search_result"}, {"title": "2024 NBA Playoffs | Official Bracket, Schedule and Series Matchups", "url": "https://www.nba.com/playoffs/2024", "description": "The official site of the <strong>2024</strong> <strong>NBA</strong> Playoffs. Latest news, schedules, matchups, highlights, bracket and more.", "type": "search_result"}]}
+shield_call> No Violation
+inference> The players who played in the winning team of the NBA Western Conference Semifinals of 2024 are not specified in the search results provided. However, the search results suggest that the Mavericks played against the Thunder in the Western Conference Semifinals, and the Mavericks won the series.
+shield_call> No Violation
+```
+
+## Start an App and Interact with the Server
+
+Now that the Stack server is setup, the next thing would be to run an agentic app using Agents APIs.
+
+We have built sample scripts, notebooks and a UI chat interface ( using [Gradio]([url](https://www.gradio.app/)) ! ) to help you get started.
+
+Start an app (local) and interact with it by running the following command:
+```bash
+PYTHONPATH=. python examples/agent_store/app.py localhost 5000
+```
+This will start a mesop app and you can go to `localhost:7860` to play with the chat interface.
+
+<img src="demo.png" alt="Chat App" width="600"/>
+
+Optionally, you can setup API keys for custom tools:
+- [WolframAlpha](https://developer.wolframalpha.com/): store in `WOLFRAM_ALPHA_API_KEY` environment variable
+- [Brave Search](https://brave.com/search/api/): store in `BRAVE_SEARCH_API_KEY` environment variable
+
+You may see other ways of interacting in [Agent Store README.md](https://github.com/meta-llama/llama-stack-apps/tree/main/examples/agent_store)
+
+## Create agentic systems and interact with the Stack server
+
+NOTE: Ensure that Stack server is still running.
+
+```bash
+cd <path-to-llama-stack-apps-repo>
+conda activate $ENV
+llama stack run <name> # If not already started
+
+python -m examples.agents.rag_with_memory_bank localhost 5000
+```
+
+You should see outputs to stdout of the form --
+```bash
+Available shields found: ['meta-llama/Llama-Guard-3-8B']
+Using model: meta-llama/Llama-3.1-405B-Instruct
+Created session_id=cdb8a978-0085-4f3d-a976-939ba2b19de9 for Agent(0cfe05a8-cb97-430f-bec6-b1c7d42c712a)
+shield_call> No Violation
+memory_retrieval> Retrieved context from banks: ['test_bank'].
+====
+Here are the retrieved documents for relevant context:
+=== START-RETRIEVED-CONTEXT ===
+ id:num-1; content:_
+the template from Llama2 to better support multiturn conversations. The same text
+in the Lla...
+>
+inference> Based on the provided documentation, here are the top 5 topics explained:
+
+* Fine-tuning Llama3 with chat data
+* Template changes from Llama2 to Llama3
+* Tokenizing prompt templates and special tokens
+* Fine-tuning on a custom chat dataset
+* Using prompt templates for specific tasks
+shield_call> No Violation
+
+...
+```
+
+
+Feel free to reach out if you have questions.
+
+
+## The Llama Stack Client SDK
+- Check out our client SDKs for connecting to Llama Stack server, you can choose from [python](https://github.com/meta-llama/llama-stack-client-python), [node](https://github.com/meta-llama/llama-stack-client-node), [swift](https://github.com/meta-llama/llama-stack-client-swift), and [kotlin](https://github.com/meta-llama/llama-stack-client-kotlin) programming languages to quickly build your applications.
+
+
+## Using VirtualEnv instead of Conda
+
+> [!NOTE]
+> While you can run the apps using `venv`, installation of a distribution requires conda.
+
 #### In Linux
 
 ```bash
 # Create and activate a virtual environment
 python3 -m venv venv
 source venv/bin/activate
-
-# Install the package
-pip install llama-agentic-system
 ```
 
 #### For Windows
@@ -59,261 +193,6 @@ venv\Scripts\activate  # For Command Prompt
 .\venv\Scripts\Activate.ps1  # For PowerShell
 # or
 source venv\Scripts\activate  # For Git
-
-# Install the package
-pip install llama-agentic-system
 ```
 
-**Running FP8**
----------------------------
-If you want to run with on-the-fly fp8 quantization, you need `fbgemm-gpu` package which requires torch >= 2.4.0 (currently only in nightly, but releasing shortly...). You can find the fp8_requirements in the llama-toolchain repository at https://github.com/meta-llama/llama-toolchain/blob/main/fp8_requirements.txt.
-
-```bash
-ENV=fp8_env
-conda create -n $ENV python=3.10
-conda activate $ENV
-
-pip3 install -r fp8_requirements.txt
-```
-
-**Install as a Package**
--------------------------
-
-Install the package using pip:
-```bash
-pip install -e .
-```
-This will install all the dependencies as needed.
-
-We also need bubblewrap to run code executor as a tool for the agent.
-Install [bubblewrap](https://github.com/containers/bubblewrap)
-
-**Test Installation**
---------------------
-
-Test the installation by running the following command:
-```bash
-llama --help
-```
-This should print the CLI help message.
-
-```bash
-usage: llama [-h] {download,inference,model,agentic_system} ...
-
-Welcome to the LLama cli
-
-options:
-  -h, --help            show this help message and exit
-
-subcommands:
-  {download,inference,model,agentic_system}
-```
-
-This Llama CLI will help you to do the following
-
-- Download the latest Llama3.1 models from HuggingFace
-- Configure and start a inference server on your local machine
-- Configure and run apps that showcase agentic systems built using the Llama Stack APIs.
-
-Lets go step by step and finish the setup process,
-
-**Download Checkpoints (or use existing models)**
-----------------------------------------------
-
-Download the required checkpoints using the following commands:
-```bash
-# download the 8B model, this can be run on a single GPU
-llama download meta-llama/Meta-Llama-3.1-8B-Instruct
-
-# you can also get the 70B model, this will require 8 GPUs however
-llama download meta-llama/Meta-Llama-3.1-70B-Instruct
-
-# llama-agents have safety enabled by default. For this, you will need
-# safety models -- Llama-Guard and Prompt-Guard
-llama download meta-llama/Prompt-Guard-86M --ignore-patterns original
-llama download meta-llama/Llama-Guard-3-8B --ignore-patterns original
-```
-**Important:** Set your environment variable `HF_TOKEN` or pass in `--hf-token` to the command to validate your access. You can find your token at [https://huggingface.co/settings/tokens](https://huggingface.co/settings/tokens).
-
-> **Tip:** Default for `llama download` is to run with `--ignore-patterns *.safetensors` since we use the `.pth` files in the `original` folder. For Llama Guard and Prompt Guard, however, we need safetensors. Hence, please run with `--ignore-patterns original` so that safetensors are downloaded and `.pth` files are ignored.
-
-
-**Configure Inference Server Config**
-------------------------------------
-
-Configure the inference server config by running the following command:
-```bash
-llama inference configure
-```
-Follow the system prompts to fill in checkpoints, model_parallel_size, etc. When asked for the checkpoint directory for the model, provide the local model path from the previous step. This writes configs to `~/.llama/configs/inference.yaml`.
-
-> **Tip:** Note that while you download HF checkpoints, we rely on the original `.pth` files stored in the `original` folder. So make sure to use `<path>/original` for checkpoint directory if necessary.
-
-You should see output like
-```bash
-YAML configuration has been written to <HOME_DIR>/.llama/configs/inference.yaml
-```
-
-All configurations as well as models are stored in `~/.llama`
-
-**Run Inference Server**
------------------------
-
-Run the inference server by running the following command:
-```bash
-llama inference start
-```
-This will start an inference server that runs the model on `localhost:5000` by default.
-
-> [!NOTE]
-> Inference config is in `~/.llama/configs/inference.yaml`. Feel free to increase `max_seq_len` or change checkpoint directories as needed.
-
-> [!IMPORTANT]
-> The inference server currently only supports CUDA. It will not work on Apple Silicon machines.
-
-You'll see the output:
-```bash
-Loading config from : ~/.llama/configs/inference.yaml
-Yaml config:
-------------------------
-inference_config:
-  impl_config:
-    impl_type: inline
-    checkpoint_config:
-      checkpoint:
-        checkpoint_type: pytorch
-        checkpoint_dir: <HOMEDIR>/local/checkpoints/Meta-Llama-3.1-8B-Instruct-20240710150000//
-        tokenizer_path: <HOMEDIR>/local/checkpoints/Meta-Llama-3.1-8B-Instruct-20240710150000//tokenizer.model
-        model_parallel_size: 1
-        quantization_format: bf16
-    quantization: null
-    torch_seed: null
-    max_seq_len: 2048
-    max_batch_size: 1
-
-------------------------
-Listening on :::5000
-INFO:     Started server process [2412753]
-INFO:     Waiting for application startup.
-> initializing model parallel with size 1
-> initializing ddp with size 1
-> initializing pipeline with size 1
-
-Loaded in 13.86 seconds
-NCCL version 2.20.5+cuda12.4
-Finished model load YES READY
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://[::]:5000 (Press CTRL+C to quit)
-```
-This server is running a Llama model locally.
-
-> [!TIP]
-> You might need to use the flag `--disable-ipv6` to  Disable IPv6 support
-
-Now that the inference server is setup, the next thing would be to run an agentic app using the llama-agentic-system APIs.
-
-We have build sample scripts, notebooks and a UI chat interface ( using [Mesop]([url](https://google.github.io/mesop/)) ! ) to help you get started.
-
-**Configure Agentic System**
----------------------------
-
-Configure the agentic system config by running the following command:
-```bash
-llama agentic_system configure
-```
-Follow the system prompts. When asked for a model checkpoint directory, provide the local model path from the previous step.
-This writes a config to `~/.llama/configs/agentic_system/inline.yaml`.
-
-This config will look something like this
-```bash
-agentic_system_config:
-  impl_config:
-    impl_type: inline
-    inference_config:
-      impl_config:
-        impl_type: remote
-        # the url to the inference server
-        url: http://localhost:5000
-  # Safety shields
-  safety_config:
-    llama_guard_shield:
-      model_dir: <path>
-      excluded_categories: []
-      disable_input_check: False
-      disable_output_check: False
-    prompt_guard_shield:
-      model_dir: <path>
-
-# Use this config to change the sampling params
-# when interacting with an agent instance
-sampling_params:
-  temperature: 0.0
-  strategy: "top_p"
-  top_p: 0.95
-  top_k: 0
-```
-
-**Add API Keys for Tools**
----------------------------------------------
-In your repo root directory, add API Keys for tools.
-Tools that model supports which needs API Keys --
-- Brave for web search (https://api.search.brave.com/register)
-- Wolfram for math operations (https://developer.wolframalpha.com/)
-
-
-> **Tip** If you do not have API keys, you can still run the app without model having access to the tools.
-
-
-**Start an App and Interact with the Server**
----------------------------------------------
-
-Start an app (inline) and interact with it by running the following command:
-```bash
-mesop app/main.py
-```
-This will start a mesop app and you can go to `localhost:32123` to play with the chat interface.
-
-<img src="demo.png" alt="Chat App" width="600"/>
-
-Similar to this main app, you can also try other variants
-- `PYTHONPATH=. mesop app/chat_with_custom_tools.py`  to showcase how custom tools are integrated
-- `PYTHONPATH=. mesop app/chat_moderation_with_llama_guard.py`  to showcase how the app is modified to act as a chat moderator for safety
-
-> **Tip** Keep the inference server running in the background for faster iteration cycle
-
-
-**Start a script that can create a agent and interact with the inference server**
----------------------------------------------
-
-NOTE: Ensure that inference server is still running.
-
-```bash
-cd <path-to-llama-agentic-system>
-conda activate $ENV
-llama inference start  # If not already started
-
-PYTHONPATH=. python examples/scripts/vacation.py localhost 5000
-```
-
-You should see outputs to stdout of the form --
-```bash
-Environment: ipython
-Tools: brave_search, wolfram_alpha, photogen
-
-Cutting Knowledge Date: December 2023
-Today Date: 23 July 2024
-
-
-User> I am planning a trip to Switzerland, what are the top 3 places to visit?
-Final Llama Guard response shield_type=<BuiltinShield.llama_guard: 'llama_guard'> is_violation=False violation_type=None violation_return_message=None
-Ran PromptGuardShield and got Scores: Embedded: 0.9999765157699585, Malicious: 1.1110752893728204e-05
-StepType.shield_call> No Violation
-role='user' content='I am planning a trip to Switzerland, what are the top 3 places to visit?'
-StepType.inference> Switzerland is a beautiful country with a rich history, culture, and natural beauty. Here are three must-visit places to add to your itinerary: ....
-
-```
-
-> **Tip** You can optionally do `--disable-safety` in the scripts to avoid running safety shields all the time.
-
-
-Feel free to reach out if you have questions.
+The instructions thereafter (including `pip install -r requirements.txt` for installing the dependencies) remain the same.
